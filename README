@@ -1,0 +1,53 @@
+TA-authid
+====
+
+Collects identity-client state: name-service lookup order from /etc/nsswitch.conf, SSSD service state and configured domains, system Kerberos ticket cache count, and nscd/oddjob presence where installed. Emits JSON events to index=main (sourcetype authid:status) and authid.* metrics to index=metrics (sourcetype authid:metrics); local-auth-only hosts report the baseline without alarms.
+
+Prerequisites
+-------------
+  * none - reads /etc/nsswitch.conf, systemctl, klist, sssctl when present
+  * Splunk Enterprise or Universal Forwarder 9.x - 10.6 (forwarder recommended
+    on monitored hosts).
+  * A metrics-typed index (default name: metrics) on the indexer:
+
+      [metrics]
+      datatype = metric
+
+    Forwarders only need that index to exist on the indexer side.
+  * No network egress, no root requirement beyond the Splunk service account.
+    Fully standalone add-on with no dependencies.
+
+Install
+-------
+Install on each monitored host (Apps > Install app from file, splunk install
+app, or deployment server), restart Splunk, then verify:
+
+  index=main sourcetype="authid:status" | head
+
+Search quick reference
+----------------------
+  index=main sourcetype="authid:status" | head
+  | mcatalog values(metric_name) where index=metrics metric_name="authid.*" by host
+  | mstats avg("authid.*") where index=metrics span=60s by host
+
+Usage
+-----
+Events: index=main sourcetype=authid:status  (nsswitch order, sssd state/domains, krb ticket count)
+Metrics: authid.sssd_active, authid.krb_tickets, authid.nscd_active on index=metrics
+Dashboards: TA-Authid > Authid Overview / Authid Metrics
+
+Configure
+---------
+Override the interval or destination index in etc/apps/TA-authid/local/inputs.conf
+(never edit default/).
+
+Troubleshooting
+---------------
+  * klist reads the system ticket cache only when a keytab/agent is present.
+  * SSSD sections appear only when sssd is installed.
+
+License
+-------
+SOURCE-AVAILABLE (see LICENSE) - free personal, educational and evaluation
+use; commercial or production use requires a paid license from BentleyPC
+LLC (https://www.bentleypc.com).
