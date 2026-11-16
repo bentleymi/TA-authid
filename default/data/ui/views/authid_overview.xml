@@ -3,43 +3,86 @@
   <description>Collects identity-client state: name-service lookup order from /etc/nsswitch.conf, SSSD service state and configured domains, system Kerberos ticket cache count, and nscd/oddjob</description>
   <row>
     <panel>
-      <title>Hosts Reporting (latest)</title>
+      <title>Kerberos tickets (per host, latest)</title>
+      <single>
+        <search>
+          <query>| mstats avg("authid.krb_tickets") as value where index=metrics span=5m
+| fields - _time | tail 1</query>
+          <done/>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>SSSD active (per host, latest, 1=yes)</title>
+      <single>
+        <search>
+          <query>| mstats avg("authid.sssd_active") as value where index=metrics span=5m
+| fields - _time | tail 1</query>
+          <done/>
+        </search>
+      </single>
+    </panel>
+    <panel>
+      <title>nscd active (per host, latest, 1=yes)</title>
+      <single>
+        <search>
+          <query>| mstats avg("authid.nscd_active") as value where index=metrics span=5m
+| fields - _time | tail 1</query>
+          <done/>
+        </search>
+      </single>
+    </panel>
+  </row>
+  <row>
+    <panel>
+      <title>NSS passwd sources (system order)</title>
       <table>
         <search>
           <query>index=main sourcetype="authid:status"
-| stats latest(_time) as "Last seen", count as Reports by host
-| table host "Last seen" Reports</query>
+| dedup host
+| spath input=_raw output=x path=nsswitch_passwd{}
+| mvexpand x
+| rename x as "source"
+| table host "source"</query>
           <done/>
         </search>
+        <option name="count">50</option>
         <option name="drilldown">none</option>
       </table>
     </panel>
   </row>
   <row>
     <panel>
-      <title>Distinct authid.* Metrics (last hour)</title>
-      <single>
+      <title>NSS group sources (system order)</title>
+      <table>
         <search>
-          <query>| mcatalog values(metric_name) as m where index=metrics metric_name="authid.*"
-| eval count=mvcount(m)</query>
+          <query>index=main sourcetype="authid:status"
+| dedup host
+| spath input=_raw output=x path=nsswitch_group{}
+| mvexpand x
+| rename x as "source"
+| table host "source"</query>
           <done/>
         </search>
-        <option name="underLabel">authid.* metrics streaming</option>
-      </single>
+        <option name="count">50</option>
+        <option name="drilldown">none</option>
+      </table>
     </panel>
   </row>
   <row>
     <panel>
-      <title>Issues (newest first)</title>
+      <title>SSSD domains</title>
       <table>
         <search>
-          <query>index=main sourcetype="authid:status" _raw="*alarm*"
-| sort - _time
-| table _time host _raw
-| rename _raw as Event
-| head 200</query>
+          <query>index=main sourcetype="authid:status"
+| dedup host
+| spath input=_raw output=x path=sssd_domains{}
+| mvexpand x
+| rename x as "domain"
+| table host "domain"</query>
           <done/>
         </search>
+        <option name="count">50</option>
         <option name="drilldown">none</option>
       </table>
     </panel>
