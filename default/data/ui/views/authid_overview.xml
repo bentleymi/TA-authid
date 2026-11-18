@@ -3,7 +3,7 @@
   <description>Collects identity-client state: name-service lookup order from /etc/nsswitch.conf, SSSD service state and configured domains, system Kerberos ticket cache count, and nscd/oddjob</description>
   <row>
     <panel>
-      <title>Kerberos tickets (per host, latest)</title>
+      <title>Kerberos tickets (fleet avg, latest 5m)</title>
       <single>
         <search>
           <query>| mstats avg("authid.krb_tickets") as value where index=metrics span=5m
@@ -13,7 +13,7 @@
       </single>
     </panel>
     <panel>
-      <title>SSSD active (per host, latest, 1=yes)</title>
+      <title>SSSD active (fleet avg, latest 5m, 1=yes)</title>
       <single>
         <search>
           <query>| mstats avg("authid.sssd_active") as value where index=metrics span=5m
@@ -23,7 +23,7 @@
       </single>
     </panel>
     <panel>
-      <title>nscd active (per host, latest, 1=yes)</title>
+      <title>nscd active (fleet avg, latest 5m, 1=yes)</title>
       <single>
         <search>
           <query>| mstats avg("authid.nscd_active") as value where index=metrics span=5m
@@ -41,6 +41,7 @@
           <query>index=main sourcetype="authid:status"
 | dedup host
 | spath input=_raw output=x path=nsswitch_passwd{}
+| where isnotnull(x) AND x!=""
 | mvexpand x
 | rename x as "source"
 | table host "source"</query>
@@ -59,6 +60,7 @@
           <query>index=main sourcetype="authid:status"
 | dedup host
 | spath input=_raw output=x path=nsswitch_group{}
+| where isnotnull(x) AND x!=""
 | mvexpand x
 | rename x as "source"
 | table host "source"</query>
@@ -77,6 +79,7 @@
           <query>index=main sourcetype="authid:status"
 | dedup host
 | spath input=_raw output=x path=sssd_domains{}
+| where isnotnull(x) AND x!=""
 | mvexpand x
 | rename x as "domain"
 | table host "domain"</query>

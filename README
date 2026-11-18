@@ -41,10 +41,29 @@ Configure
 Override the interval or destination index in etc/apps/TA-authid/local/inputs.conf
 (never edit default/).
 
+Optional: SSSD domains
+----------------------
+/etc/sssd/sssd.conf is 0600 root:root, so the Splunk service account can
+never read it directly and sssd_domains would always be empty. When the
+config file is unreadable, the collector falls back to
+`sudo -n /usr/sbin/sssctl domain-list` (installed separately; sssd-tools)
+and parses its "Domain: <name>" lines. To enable that fallback, install the
+supplied sudoers drop-in yourself - it is shipped as an example only and is
+never installed by the app:
+
+  sudo install -m 0440 <app>/deploy/ta_authid.sssctl_sudoers.example /etc/sudoers.d/ta-authid
+
+(Replace the user "splunk" if your forwarder runs under another account.)
+Without the drop-in - or where sudo/sssctl are not installed - the
+collector degrades gracefully: events still emit and sssd_domains stays [].
+
 Troubleshooting
 ---------------
   * klist reads the system ticket cache only when a keytab/agent is present.
-  * SSSD sections appear only when sssd is installed.
+  * krb_tickets counts tickets ("Valid until" lines from klist);
+    krb_ticket_caches counts caches ("Ticket cache:" lines from klist -S).
+  * SSSD sections appear only when sssd is installed; see "Optional: SSSD
+    domains" above for reading domains without root-owned file access.
 
 License
 -------

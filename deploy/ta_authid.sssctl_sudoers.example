@@ -1,0 +1,17 @@
+# Optional sudoers drop-in for TA-authid (read-only example; NOT installed by the app).
+#
+# /etc/sssd/sssd.conf is 0600 root:root, so the Splunk service account cannot
+# read it directly. When the main config is unreadable, the collector falls
+# back to:  sudo -n /usr/sbin/sssctl domain-list
+# and parses its "Domain: <name>" lines. Without this drop-in (or with sssd
+# not installed) the collector degrades gracefully and emits sssd_domains=[].
+#
+# Install manually (adjust the user if your forwarder runs as something other
+# than "splunk"), e.g.:
+#   sudo install -m 0440 ta_authid.sssctl_sudoers.example /etc/sudoers.d/ta-authid
+# Verify with:
+#   sudo -u splunk sudo -n /usr/sbin/sssctl domain-list
+#
+# This grants sssctl only (which supports domain-list, config-check,
+# user-is-existing, etc.); it does not grant a general root shell.
+splunk ALL=(root) NOPASSWD: /usr/sbin/sssctl
