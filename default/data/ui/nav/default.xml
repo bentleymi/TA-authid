@@ -3,5 +3,6 @@
     <view name="authid_overview" />
     <view name="authid_metrics" />
     <search label="TA-authid Events" search="search index=main sourcetype=authid:status" />
+    <view name="license" />
   </nav>
 </application>
